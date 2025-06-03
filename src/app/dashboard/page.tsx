@@ -48,7 +48,8 @@ export default function DashboardPage() {
     setBusy(true);
     try {
       // TODO: 呼叫 IoT publish 或 API 觸發裝置連線/斷線
-      await new Promise((res) => setTimeout(res, 500));
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/team12-health-check');
+      console.log(res);
       setConnected((c) => !c);
     } finally {
       setBusy(false);
@@ -79,6 +80,22 @@ export default function DashboardPage() {
   const mockReceivePhoto = () => {
     setImageUrl('/media/test.jpg'); // TODO: 換成實際 S3 URL
   };
+
+  // --- 模擬健康檢查 ------------------------------
+  const handleHealthCheck = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/check-connectivity');
+      if (!res.ok) throw new Error('Health check failed');
+      const data = await res.json();
+      alert(data?.message || 'Device is healthy!');
+    } catch (err) {
+      alert('Health check failed.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-slate-950 p-4 text-white">
@@ -119,6 +136,15 @@ export default function DashboardPage() {
               <p className="text-sm text-slate-400">No image yet.</p>
             )}
             <Button variant="secondary" onClick={mockReceivePhoto} className="text-xs">Mock Receive Photo</Button>
+          </CardContent>
+        </Card>
+        {/* 健康檢查卡片 */}
+        <Card className="rounded-2xl shadow-xl bg-slate-900">
+          <CardContent className="p-6 flex flex-col items-center gap-4">
+            <h2 className="text-xl text-white font-semibold">Health Check</h2>
+            <Button onClick={handleHealthCheck}  className="gap-2">
+              🩺 Run Health Check
+            </Button>
           </CardContent>
         </Card>
       </div>
