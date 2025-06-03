@@ -48,9 +48,13 @@ export default function DashboardPage() {
     setBusy(true);
     try {
       // TODO: 呼叫 IoT publish 或 API 觸發裝置連線/斷線
-      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/team12-health-check');
-      console.log(res);
-      setConnected((c) => !c);
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/check-connectivity');
+      if (!res.ok) throw new Error('check connectivity failed');
+      else {
+        const responseBody = await res.json();
+        setConnected((c) => !c);
+      }
+      
     } finally {
       setBusy(false);
     }
@@ -60,6 +64,11 @@ export default function DashboardPage() {
     setBusy(true);
     try {
       // TODO: publish 通知
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/notification');
+      if(res.ok){
+        const responseBody = await res.json();
+        console.log(responseBody);
+      }
       await new Promise((res) => setTimeout(res, 500));
     } finally {
       setBusy(false);
@@ -68,6 +77,15 @@ export default function DashboardPage() {
 
   const handleSendMedia = async () => {
     setBusy(true);
+    const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue');
+    //console.log(response);
+    if(res.ok){
+      const responseBody = await res.json();
+      if (responseBody?.success) {
+        // cue me is successful
+      }
+    }
+    
     try {
       // TODO: 開檔對話框，將 sound/image 透過 API 上傳 & 發送
       await new Promise((res) => setTimeout(res, 500));
@@ -85,10 +103,15 @@ export default function DashboardPage() {
   const handleHealthCheck = async () => {
     setBusy(true);
     try {
-      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/check-connectivity');
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/health-check-no-auth');
+      
       if (!res.ok) throw new Error('Health check failed');
-      const data = await res.json();
-      alert(data?.message || 'Device is healthy!');
+      else {
+        const responseBody = await res.json();
+        console.log(responseBody);
+        alert(responseBody.message || 'Device is healthy!');
+      }
+      
     } catch (err) {
       alert('Health check failed.');
     } finally {
