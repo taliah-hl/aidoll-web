@@ -1,9 +1,9 @@
 'use client';
 
 import '@/lib/amplify';
-import { signIn } from 'aws-amplify/auth';
+import { signIn, getCurrentUser } from 'aws-amplify/auth';
 import { useForm } from 'react-hook-form';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { Loader2, CheckCircle2 } from 'lucide-react';
@@ -20,6 +20,19 @@ export default function SignInPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const router = useRouter();
+
+  const [authChecked, setAuthChecked] = useState<boolean | null>(null); // null = 尚未檢查
+  useEffect(() => {
+    (async () => {
+      try {
+        await getCurrentUser();
+        setAuthChecked(true);
+        router.replace('/dashboard');
+      } catch {
+        setAuthChecked(false);
+      }
+    })();
+  }, [router]);
 
   const onSubmit = async (data: SignInForm) => {
     setLoading(true);
@@ -48,7 +61,6 @@ export default function SignInPage() {
           setError('Additional verification required.');
       }
     } catch (err: any) {
-      console.log("haha")
       if (err.name === 'UserNotConfirmedException') {
         // 帶 username 去 confirm 頁
         router.push(`/confirm?u=${encodeURIComponent(data.username)}`);
@@ -62,6 +74,7 @@ export default function SignInPage() {
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex min-h-screen items-center justify-center bg-gradient-to-br from-slate-950 to-slate-900 p-4">
+      {authChecked === null ? <Loader2/> :
       <Card className="w-full max-w-md rounded-2xl shadow-xl">
         <CardContent className="p-8 space-y-6">
           <h1 className="text-2xl font-bold text-center text-black">Sign in</h1>
@@ -75,6 +88,7 @@ export default function SignInPage() {
           </form>
         </CardContent>
       </Card>
+      } 
     </motion.div>
   );
 }
