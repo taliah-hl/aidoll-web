@@ -80,7 +80,6 @@ useEffect(() => {
         const responseBody = await res.json();
         console.log(responseBody);
       }
-      await new Promise((res) => setTimeout(res, 500));
     } finally {
       setBusy(false);
     }
