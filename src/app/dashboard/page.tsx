@@ -30,25 +30,46 @@ export default function DashboardPage() {
 
   /* --- State ----------------------------------------- */
   const [connected, setConnected] = useState(false);
+  const [connectivityError, setConnectivityError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [cueState, setCueState] = useState<'idle' | 'cued'>('idle');
+
+  const [message, setMessage] = useState<string | null>(null);
 
   /* --- Actions --------------------------------------- */
-  const toggleConnection = async () => {
-    setBusy(true);
-    try {
-      // TODO: 呼叫 IoT publish 或 API 觸發裝置連線/斷線
-      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/check-connectivity');
-      if (!res.ok) throw new Error('check connectivity failed');
-      else {
-        const responseBody = await res.json();
-        setConnected((c) => !c);
+const checkConnectivity = async () => {
+  setBusy(true);
+  setConnectivityError(null); // reset error
+  try {
+    const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/check-connectivity');
+    if(res.ok){
+      const responseBody = await res.json();
+      console.log('Connectivity check response:', responseBody);
+      if(responseBody.success){
+        setMessage(responseBody.message);
+        console.log('Connectivity check response:', responseBody);
+      } else {
+        throw new Error('check connectivity failed');
       }
-      
-    } finally {
-      setBusy(false);
+    } else {
+      throw new Error('check connectivity failed');
     }
-  };
+  } finally {
+    setBusy(false);
+  }
+};
+
+useEffect(() => {
+  console.log('Connectivity check response:', message);
+  if(message === 'connected') {
+    setConnected(true);
+    setConnectivityError(null);
+  } else if(message === 'unconnected') {
+    setConnected(false);
+    setConnectivityError('Device is not connected!');
+  }
+}, [message]);
 
   const handleNotify = async () => {
     setBusy(true);
@@ -59,7 +80,6 @@ export default function DashboardPage() {
         const responseBody = await res.json();
         console.log(responseBody);
       }
-      await new Promise((res) => setTimeout(res, 500));
     } finally {
       setBusy(false);
     }
@@ -67,26 +87,31 @@ export default function DashboardPage() {
 
   const handleStartCue = async () => {
     setBusy(true);
-    const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue');
-    //console.log(response);
-    if(res.ok){
-      const responseBody = await res.json();
-      if (responseBody?.success) {
-        // cue me is successful
+    try {
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue');
+      if (res.ok) {
+        const responseBody = await res.json();
+        if (responseBody?.cueState) {
+          setCueState(responseBody.cueState); // update cueState from response
+        }
       }
+    } finally {
+      setBusy(false);
     }
-    
   };
 
   const handleStopCue = async () => {
     setBusy(true);
-    const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue-stop');
-    //console.log(response);
-    if(res.ok){
-      const responseBody = await res.json();
-      if (responseBody?.success) {
-        // cue me is successful
+    try {
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue-stop');
+      if (res.ok) {
+        const responseBody = await res.json();
+        if (responseBody?.cueState) {
+          setCueState(responseBody.cueState); // update cueState from response
+        }
       }
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -143,22 +168,37 @@ export default function DashboardPage() {
         {/* 控制卡片 */}
         <Card className="rounded-2xl shadow-xl bg-slate-900">
           <CardContent className="p-8 flex flex-col items-center gap-6">
-            <Button onClick={toggleConnection} disabled={busy} size="icon" className="h-16 w-16 rounded-full">
+            <Button onClick={checkConnectivity} disabled={busy} size="icon" className="h-16 w-16 rounded-full">
               {busy ? (
                 <Loader2 className="h-8 w-8 animate-spin" />
               ) : (
                 <Power className={`h-8 w-8 ${connected ? 'text-green-500' : 'text-red-500'}`} />
               )}
             </Button>
-            <p className="text-white">{connected ? 'Connected' : 'Disconnected'}</p>
+            <p className="text-white">{connected ? 'Connected' : 'Device Not Connected'}</p>
 
             <div className="flex gap-4">
               <Button onClick={handleNotify} disabled={!connected || busy} className="gap-2">
                 <Bell className="h-4 w-4" /> Notify
               </Button>
-              <Button onClick={handleStartCue} disabled={!connected || busy} className="gap-2">
-                <Upload className="h-4 w-4" /> Media
-              </Button>
+              {cueState === 'idle' ? (
+                <Button
+                  onClick={handleStartCue}
+                  disabled={!connected || busy}
+                  className="gap-2"
+                >
+                  <Upload className="h-4 w-4" /> Cue Me
+                </Button>
+              ) : (
+                <Button
+                  onClick={handleStopCue}
+                  disabled={!connected || busy}
+                  className="gap-2"
+                  variant="destructive"
+                >
+                  <Upload className="h-4 w-4" /> Stop
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -180,7 +220,7 @@ export default function DashboardPage() {
         {/* 健康檢查卡片 */}
         <Card className="rounded-2xl shadow-xl bg-slate-900">
           <CardContent className="p-6 flex flex-col items-center gap-4">
-            <h2 className="text-xl text-white font-semibold">Health Check</h2>
+            <h2 className="text-xl text-white font-semibold">AWS Endpoint Health Check</h2>
             <Button onClick={handleHealthCheck}  className="gap-2">
               🩺 Run Health Check
             </Button>
