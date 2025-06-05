@@ -36,21 +36,58 @@ export default function DashboardPage() {
   /* --- Actions --------------------------------------- */
   const toggleConnection = async () => {
     setBusy(true);
-    await new Promise((r) => setTimeout(r, 500)); // TODO: IoT publish
-    setConnected((c) => !c);
-    setBusy(false);
+    try {
+      // TODO: 呼叫 IoT publish 或 API 觸發裝置連線/斷線
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/check-connectivity');
+      if (!res.ok) throw new Error('check connectivity failed');
+      else {
+        const responseBody = await res.json();
+        setConnected((c) => !c);
+      }
+      
+    } finally {
+      setBusy(false);
+    }
   };
 
   const handleNotify = async () => {
     setBusy(true);
-    await new Promise((r) => setTimeout(r, 500)); // TODO: publish notif
-    setBusy(false);
+    try {
+      // TODO: publish 通知
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/notification');
+      if(res.ok){
+        const responseBody = await res.json();
+        console.log(responseBody);
+      }
+      await new Promise((res) => setTimeout(res, 500));
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleSendMedia = async () => {
+  const handleStartCue = async () => {
     setBusy(true);
-    await new Promise((r) => setTimeout(r, 500)); // TODO: upload & publish
-    setBusy(false);
+    const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue');
+    //console.log(response);
+    if(res.ok){
+      const responseBody = await res.json();
+      if (responseBody?.success) {
+        // cue me is successful
+      }
+    }
+    
+  };
+
+  const handleStopCue = async () => {
+    setBusy(true);
+    const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/cue-stop');
+    //console.log(response);
+    if(res.ok){
+      const responseBody = await res.json();
+      if (responseBody?.success) {
+        // cue me is successful
+      }
+    }
   };
 
   const mockReceivePhoto = () => setImageUrl('https://placekitten.com/640/480');
@@ -59,6 +96,25 @@ export default function DashboardPage() {
   const handleLogout = async () => {
     await signOut();
     router.replace('/signin');
+  };
+  // --- 模擬健康檢查 ------------------------------
+  const handleHealthCheck = async () => {
+    setBusy(true);
+    try {
+      const res = await fetch('https://cagrxdp7g5.execute-api.ap-southeast-2.amazonaws.com/health-check-no-auth');
+      
+      if (!res.ok) throw new Error('Health check failed');
+      else {
+        const responseBody = await res.json();
+        console.log(responseBody);
+        alert(responseBody.message || 'Device is healthy!');
+      }
+      
+    } catch (err) {
+      alert('Health check failed.');
+    } finally {
+      setBusy(false);
+    }
   };
 
   if (!authChecked) {
@@ -100,7 +156,7 @@ export default function DashboardPage() {
               <Button onClick={handleNotify} disabled={!connected || busy} className="gap-2">
                 <Bell className="h-4 w-4" /> Notify
               </Button>
-              <Button onClick={handleSendMedia} disabled={!connected || busy} className="gap-2">
+              <Button onClick={handleStartCue} disabled={!connected || busy} className="gap-2">
                 <Upload className="h-4 w-4" /> Media
               </Button>
             </div>
@@ -118,6 +174,15 @@ export default function DashboardPage() {
             )}
             <Button variant="secondary" onClick={mockReceivePhoto} className="text-xs">
               Mock Receive Photo
+            </Button>
+          </CardContent>
+        </Card>
+        {/* 健康檢查卡片 */}
+        <Card className="rounded-2xl shadow-xl bg-slate-900">
+          <CardContent className="p-6 flex flex-col items-center gap-4">
+            <h2 className="text-xl text-white font-semibold">Health Check</h2>
+            <Button onClick={handleHealthCheck}  className="gap-2">
+              🩺 Run Health Check
             </Button>
           </CardContent>
         </Card>
