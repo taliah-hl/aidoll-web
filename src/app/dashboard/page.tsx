@@ -90,7 +90,7 @@ export default function DashboardPage() {
     }
   };
 
-  const mockReceivePhoto = () => setImageUrl('https://placekitten.com/640/480');
+  const mockReceivePhoto = () => setImageUrl('/media/test.jpg');
 
   /* --- Logout ---------------------------------------- */
   const handleLogout = async () => {
