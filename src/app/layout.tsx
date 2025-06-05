@@ -23,7 +23,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" {...(typeof window !== 'undefined' ? { 'data-google-analytics-opt-out': '' } : {})}>
+
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
