@@ -115,7 +115,10 @@ useEffect(() => {
     }
   };
 
+
   const mockReceivePhoto = () => setImageUrl('https://team12-chatbot.s3.ap-southeast-2.amazonaws.com/chat-images/image.jpg');
+
+
 
   /* --- Logout ---------------------------------------- */
   const handleLogout = async () => {
